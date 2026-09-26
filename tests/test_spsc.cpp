@@ -1,44 +1,50 @@
 #include <iostream>
+#include <cassert>
 #include <spsc_queue.hpp>
 
-#include <iostream>
-#include "spsc_queue.hpp"
-
 int main() {
+
     RingBuffer q(5);
 
-    std::cout << std::boolalpha;
+    assert(q.empty());
 
-    // Empty initially
-    std::cout << "Initially empty: " << q.empty() << '\n';
+    assert(q.push(1));
+    assert(q.push(2));
+    assert(q.push(3));
+    assert(q.push(4));
 
-    // Normal push
-    std::cout << "Push 1: " << q.push(1) << '\n';
-    std::cout << "Push 2: " << q.push(2) << '\n';
-    std::cout << "Push 3: " << q.push(3) << '\n';
-    std::cout << "Push 4: " << q.push(4) << '\n';
-
-    std::cout << "Push 5 when full: " << q.push(5) << '\n';
+    assert(q.full());
+    assert(!q.push(5));
 
     int value;
 
-    q.pop(value);
-    std::cout << "Popped: " << value << '\n';
+    assert(q.pop(value));
+    assert(value == 1);
 
-    q.pop(value);
-    std::cout << "Popped: " << value << '\n';
-
-    std::cout << "Push 5: " << q.push(5) << '\n';
-    std::cout << "Push 6: " << q.push(6) << '\n';
+    assert(q.pop(value));
+    assert(value == 2);
 
 
-    while (q.pop(value)) {
-        std::cout << "Popped: " << value << '\n';
-    }
+    assert(q.push(5));
+    assert(q.push(6));
 
-    std::cout << "Finally empty: " << q.empty() << '\n';
 
-    std::cout << "Pop from empty: " << q.pop(value) << '\n';
+    assert(q.pop(value));
+    assert(value == 3);
 
-    return 0;
+    assert(q.pop(value));
+    assert(value == 4);
+
+    assert(q.pop(value));
+    assert(value == 5);
+
+    assert(q.pop(value));
+    assert(value == 6);
+
+    assert(q.empty());
+
+    assert(!q.pop(value));
+
+    std::cout << "All tests passed\n";
+
 }

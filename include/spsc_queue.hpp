@@ -12,11 +12,16 @@ private:
     std::size_t tail;
 
 public:
-    RingBuffer(std::size_t capacity) : capacity(capacity), 
-                               buffer(new int[capacity]), 
+    explicit RingBuffer(std::size_t capacity) : capacity(capacity), 
+                               buffer(nullptr), 
                                head(0),
                                tail(0)
-    {    
+    {
+        if(capacity <= 1){
+            throw std::invalid_argument("RingBuffer capacity must be at least 2");
+        }
+
+        buffer = new int[capacity];
     }
 
     RingBuffer(const RingBuffer& other) = delete;
