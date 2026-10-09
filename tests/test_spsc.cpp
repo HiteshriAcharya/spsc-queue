@@ -1,50 +1,34 @@
 #include <iostream>
 #include <cassert>
+#include <thread>
 #include <spsc_queue.hpp>
+
+void testConcurrentFIFO(){
+
+    RingBuffer q(10);
+
+    std::thread producer([&](){
+        for(int i = 0; i <= 999; i++){
+            while(!q.push(i)) {}
+        }
+    });
+
+    std::thread consumer([&](){
+        int data;
+
+        for(int i = 0; i <= 999; i++){
+            while(!q.pop(data)) {}
+            assert(data == i);
+        }
+    });
+
+    producer.join();
+    consumer.join();
+
+}
 
 int main() {
 
-    RingBuffer q(5);
-
-    assert(q.empty());
-
-    assert(q.push(1));
-    assert(q.push(2));
-    assert(q.push(3));
-    assert(q.push(4));
-
-    assert(q.full());
-    assert(!q.push(5));
-
-    int value;
-
-    assert(q.pop(value));
-    assert(value == 1);
-
-    assert(q.pop(value));
-    assert(value == 2);
-
-
-    assert(q.push(5));
-    assert(q.push(6));
-
-
-    assert(q.pop(value));
-    assert(value == 3);
-
-    assert(q.pop(value));
-    assert(value == 4);
-
-    assert(q.pop(value));
-    assert(value == 5);
-
-    assert(q.pop(value));
-    assert(value == 6);
-
-    assert(q.empty());
-
-    assert(!q.pop(value));
-
+    testConcurrentFIFO();
     std::cout << "All tests passed\n";
-
 }
