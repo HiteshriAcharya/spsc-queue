@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <mutex>
+#include <memory>
 #include <cstddef>
 #include <condition_variable>
 
@@ -10,17 +11,17 @@ class RingBuffer{
 private:
 
     std::size_t capacity_;
-    int* buffer_;
+    std::unique_ptr<int[]> buffer_;
 
     std::size_t head_;
     std::size_t tail_;
 
-    std::mutex m;
+    std::mutex m_;
 
-    std::condition_variable not_full;
-    std::condition_variable not_empty;
+    std::condition_variable not_full_;
+    std::condition_variable not_empty_;
 
-     bool empty() const{
+    bool empty() const{
         return head_ == tail_;
     }
 
@@ -38,7 +39,7 @@ public:
             throw std::invalid_argument("RingBuffer capacity_ must be at least 2");
         }
 
-        buffer_ = new int[capacity_];
+        buffer_ = std::make_unique<int[]>(capacity_);
     }
 
     RingBuffer(const RingBuffer& other) = delete;
@@ -47,13 +48,9 @@ public:
     RingBuffer(RingBuffer&& other) = delete;
     RingBuffer& operator=(RingBuffer&& other) = delete;
 
-    ~RingBuffer(){
-        delete [] buffer_;
-    }
-
     bool push(int data){
 
-         std::lock_guard<std::mutex> l(m);
+         std::lock_guard<std::mutex> l(m_);
 
         if(full())
             return false;
@@ -66,7 +63,7 @@ public:
 
     bool pop(int& data){
 
-        std::lock_guard<std::mutex> l(m);
+        std::lock_guard<std::mutex> l(m_);
 
         if(empty())
             return false;
@@ -78,8 +75,8 @@ public:
 
     bool pushWait(int data){
 
-        std::unique_lock<std::mutex> ul(m);
-        not_full.wait(ul, [&](){
+        std::unique_lock<std::mutex> ul(m_);
+        not_full_.wait(ul, [&](){
             return !full();
         });
 
@@ -87,15 +84,15 @@ public:
         tail_ = (tail_ + 1) % capacity_;
 
         ul.unlock();
-        not_empty.notify_one();
+        not_empty_.notify_one();
 
         return true;
     }
 
     bool popWait(int& data){
 
-        std::unique_lock<std::mutex> ul(m);
-        not_empty.wait(ul, [&](){
+        std::unique_lock<std::mutex> ul(m_);
+        not_empty_.wait(ul, [&](){
             return !empty();
         });
 
@@ -103,7 +100,7 @@ public:
         head_ = (head_ + 1) % capacity_;
 
         ul.unlock();
-        not_full.notify_one();
+        not_full_.notify_one();
 
         return true;
     }
