@@ -7,11 +7,12 @@
 #include <cstddef>
 #include <condition_variable>
 
+template <typename T>
 class RingBuffer{
 private:
 
     std::size_t capacity_;
-    std::unique_ptr<int[]> buffer_;
+    std::unique_ptr<T[]> buffer_;
 
     std::size_t head_;
     std::size_t tail_;
@@ -39,7 +40,7 @@ public:
             throw std::invalid_argument("RingBuffer capacity_ must be at least 2");
         }
 
-        buffer_ = std::make_unique<int[]>(capacity_);
+        buffer_ = std::make_unique<T[]>(capacity_);
     }
 
     RingBuffer(const RingBuffer& other) = delete;
@@ -48,7 +49,7 @@ public:
     RingBuffer(RingBuffer&& other) = delete;
     RingBuffer& operator=(RingBuffer&& other) = delete;
 
-    bool push(int data){
+    bool push(T data){
 
          std::lock_guard<std::mutex> l(m_);
 
@@ -61,7 +62,7 @@ public:
         return true;    
     }
 
-    bool pop(int& data){
+    bool pop(T& data){
 
         std::lock_guard<std::mutex> l(m_);
 
@@ -73,7 +74,7 @@ public:
         return true;
     }
 
-    bool pushWait(int data){
+    bool pushWait(T data){
 
         std::unique_lock<std::mutex> ul(m_);
         not_full_.wait(ul, [&](){
@@ -89,7 +90,7 @@ public:
         return true;
     }
 
-    bool popWait(int& data){
+    bool popWait(T& data){
 
         std::unique_lock<std::mutex> ul(m_);
         not_empty_.wait(ul, [&](){

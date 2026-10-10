@@ -1,11 +1,36 @@
 #include <iostream>
 #include <cassert>
 #include <thread>
+#include <string>
 #include <spsc_queue.hpp>
+
+void testBlockingWithStringFIFO(){
+
+    RingBuffer<std::string> q(10);
+
+    std::thread producer ([&](){
+        for(int i = 0; i <= 999; i++){
+            q.pushWait("hello" + std::to_string(i));
+        }
+    });
+
+    std::thread consumer ([&](){
+
+        std::string data;
+
+        for(int i = 0; i <= 999; i++){
+            q.popWait(data);
+            assert(data == "hello" + std::to_string(i));
+        }
+    });
+
+    producer.join();
+    consumer.join();
+}
 
 void testBlockingFIFO(){
 
-    RingBuffer q(10);
+    RingBuffer<int> q(10);
 
     std::thread producer ([&](){
         for(int i = 0; i <= 999; i++){
@@ -28,7 +53,7 @@ void testBlockingFIFO(){
 
 void testConcurrentFIFO(){
 
-    RingBuffer q(10);
+    RingBuffer<int> q(10);
 
     std::thread producer([&](){
         for(int i = 0; i <= 999; i++){
@@ -54,6 +79,7 @@ int main() {
 
     testConcurrentFIFO();
     testBlockingFIFO();
+    testBlockingWithStringFIFO();
 
     std::cout << "All tests passed\n";
 }
